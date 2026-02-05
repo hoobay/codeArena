@@ -41,4 +41,23 @@ Login / Register / Logout
 
 ## Lancer le projet
 
-Backend et frontend ont chacun leur fichier `.env`.
+Attention: Backend et frontend ont chacun leur fichier `.env`. 
+
+Exemple de .env dans frontend:
+VITE_SUPABASE_URL=https://votre_url.supabase.co
+VITE_SUPABASE_ANON_KEY=votre_cle_anon_supabase
+
+Exemple de .env dans backend: 
+PORT=3000
+SUPABASE_URL=https://votre_url.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=votre_cle_service
+SUPABASE_JWT_SECRET=votre_token_jwt_supabase
+
+Pour lancer: 
+cd .\backend\
+npm start
+
+cd .\frontend\
+npm run dev
+
+
