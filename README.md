@@ -60,4 +60,28 @@ npm start
 cd .\frontend\
 npm run dev
 
+## DB SUPABASE
+table users:
 
+CREATE TABLE users (
+  id UUID PRIMARY KEY,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+trigger (IMPORTANT):
+
+begin
+  insert into public.users (id, email, username)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data->>'username', 'anonymous')
+  );
+
+  insert into public.scores (user_id, total_points)
+  values (new.id, 0);
+
+  return new;
+end;
