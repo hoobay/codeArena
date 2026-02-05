@@ -1,82 +1,50 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 
-const AuthContext = createContext();
-
-export const useAuth = () => useContext(AuthContext);
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [ready, setReady] = useState(false);
 
-    useEffect(() => {
-        const initAuth = async () => {
-            const { data } = await supabase.auth.getSession();
+  useEffect(() => {
+    supabase.auth.getSession().then((res) => {
+      setUser(res.data?.session?.user || null);
+      setReady(true);
+    });
 
-            if (data?.session?.user) {
-                setUser(data.session.user);
-            }
+    const listener = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
 
-            setLoading(false);
-        };
-
-        initAuth();
-
-        const { data: listener } = supabase.auth.onAuthStateChange(
-            (_event, session) => {
-                setUser(session?.user ?? null);
-            }
-        );
-
-        return () => {
-            listener.subscription.unsubscribe();
-        };
-    }, []);
-
-    const login = async (email, password) => {
-        setLoading(true);
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password
-        });
-
-        if (error) {
-            setLoading(false);
-            throw error;
-        }
-
-        setUser(data.user);
-        setLoading(false);
-        return data.user;
+    return () => {
+      listener.data.subscription.unsubscribe();
     };
+  }, []);
 
-    const register = async (email, password) => {
-        setLoading(true);
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password
-        });
+  const login = (email, password) => {
+    return supabase.auth.signInWithPassword({ email, password });
+  };
 
-        if (error) {
-            setLoading(false);
-            throw error;
-        }
+  const register = (email, password, username) => {
+    return supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { username } }
+    });
+  };
 
-        setUser(data.user);
-        setLoading(false);
-        return data.user;
-    };
+  const logout = () => {
+    return supabase.auth.signOut();
+  };
 
-    const logout = async () => {
-        setLoading(true);
-        await supabase.auth.signOut();
-        setUser(null);
-        setLoading(false);
-    };
+  if (!ready) return null;
 
-    return (
-        <AuthContext.Provider value={{ user, loading, login, register, logout }}>
-            {children}
-        </AuthContext.Provider>
-    );
+  return (
+    <AuthContext.Provider value={{ user, login, register, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
+
+export const useAuth = () => useContext(AuthContext);
